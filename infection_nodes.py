@@ -2,9 +2,9 @@ from matplotlib import pyplot as plt
 import networkx as nx
 import random
 
-NUMBER_OF_NODES = 50
-NUMBER_OF_INTERACTIONS = 20
-CHANCE_OF_INFECTION = 0.4
+NUMBER_OF_NODES = 40
+NUMBER_OF_INTERACTIONS = 10
+CHANCE_OF_INFECTION = 0.75
 PATIENT_ZERO = 0
 
 def createInteractions(graph):
@@ -79,17 +79,40 @@ def runInfection(graph, infectedNode, index, nodeInteractions, listOfInfected, n
             #Call function again on this newly infected node
             runInfection(graph, node, interactions.index(node) + index + 1, nodeInteractions, listOfInfected, nodeInfectedCount)
     
-def drawGraph(graph, nodeColor):
+def drawGraph(graph, roundInfected, infectedNode, displayAllRounds):
     cmap = plt.cm.YlOrRd
     vmin=0
-    vmax = max(nodeColor)
-    #Draw the nodes and edges
-    nx.draw_networkx(graph, pos=nx.spring_layout(graph, k=0.3), with_labels=False, node_size=75, node_color=nodeColor, cmap=cmap, vmin=vmin, vmax=vmax)
+    vmax = max(roundInfected)
+    
+    
+    if displayAllRounds:
+        #Create the initial graph with NUMBER_OF_NODES
+        roundGraph = nx.empty_graph(NUMBER_OF_NODES)
+        
+        for round in range(1, NUMBER_OF_INTERACTIONS):
+            #determine which nodes were infected that round
+            indices = [i for i, x in enumerate(roundInfected) if x == round]
+    
+            #make an edge from the node that infected them to the node
+            for index in indices:
+                roundGraph.add_edge(infectedNode[index][0], index)
+    
+            #Create the subplot
+            nx.draw_networkx(roundGraph, pos=nx.spring_layout(roundGraph, k=0.3), with_labels=False, node_size=75, node_color=roundInfected, cmap=cmap, vmin=vmin, vmax=vmax)
+            
+            #Plot graph
+            plt.title("Round #{0}".format(round))
+            plt.axis('off')
+            plt.figure("Round #{0}".format(round))
+        
+        
+    #Draw the nodes and
+    nx.draw_networkx(graph, pos=nx.spring_layout(graph, k=0.3), with_labels=False, node_size=75, node_color=roundInfected, cmap=cmap, vmin=vmin, vmax=vmax)
     
     #Add a colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
     sm.set_array([])
-    cbar = plt.colorbar(sm, orientation='horizontal', pad=0.2)
+    cbar = plt.colorbar(sm, orientation='horizontal')
     cbar.set_label('Round Node was Infected')
     
     #add a title
@@ -109,7 +132,6 @@ if __name__ == "__main__":
     
     #Key: Node, Value:[Who infected them, which round]
     infectedNodes[PATIENT_ZERO] = [PATIENT_ZERO, 0]
-    
     #Create a list telling how many nodes each node infected
     nodeInfectedCount = [1] * NUMBER_OF_NODES
     
@@ -122,4 +144,4 @@ if __name__ == "__main__":
         roundInfected[key] = value[1]
             
     #Draw the graph
-    drawGraph(graph, roundInfected)
+    drawGraph(graph, roundInfected, infectedNodes, False)
